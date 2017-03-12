@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	        http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+	        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+	">
+
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+	       <list>
+				<value>/WEB-INF/spring/properties/*.properties</value>
+	        </list>
+		</property>
+	</bean>
+	
+	<bean id="searchResponseDao" class="com.upm.etsist.dao.SearchResponseDAOImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<bean id="searchExecutor" class="com.upm.etsist.executor.SearchExecutor">
+		<property name="searchResponseDao" ref="searchResponseDao"></property>
+	</bean>
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${hibernate.driverClassName}" />
+		<property name="url" value="${hibernate.url}" />
+		<property name="username" value="${hibernate.username}" />
+		<property name="password" value="${hibernate.password}" />
+	</bean>
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="packagesToScan" value="${hibernate.packagesToScan}" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+			</props>
+		</property>
+		<property name="annotatedClasses">
+			<list>
+				<value>com.upm.etsist.dto.SearchResponseDTO</value>
+				<value>com.upm.etsist.security.model.User</value>
+			</list>
+		</property>
+	</bean>
+
+
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<tx:annotation-driven />
+    <bean id="customUserDetailsService" class="com.upm.etsist.security.service.CustomUserDetailsService" >
+		<property name="userDAO" ref="userDAO"/>
+	</bean>
+    <bean id="userDAO" class="com.upm.etsist.security.dao.UserDAOImpl" >
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	
+	<bean id="shutdownService" class="com.upm.etsist.ajax.ShutdownService"/>
+	
+	<bean id="messagesQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+	
+	<bean id="cutomHarvestMessageHandler" class="com.upm.etsist.handler.CutomHarvestMessageHandler">
+ 		<constructor-arg ref="messagesQueue"/>
+ 		<property name="messageSource" ref="messageSource"></property>
+ 	</bean>
+	
+	<bean id="searchValidator" class="com.upm.etsist.validator.SearchValidator">
+ 		<property name="messageSource" ref="messageSource"></property>
+ 	</bean>
+	
+	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basename" value="/WEB-INF/spring/properties/messages" />
+		<property name="defaultEncoding" value="UTF-8" />
+	</bean>
+
+	<bean id="harvestExecutor" class="com.upm.etsist.executor.HarvestExecutor">
+ 		<property name="messagesQueue" ref="messagesQueue"/>
+ 		<property name="cutomHarvestMessageHandler" ref="cutomHarvestMessageHandler"/>
+		<property name="shutdownService" ref="shutdownService"></property>
+ 		<property name="searchResponseDao" ref="searchResponseDao"></property>
+ 		<property name="messageSource" ref="messageSource"></property>
+ 		<property name="useProxy" value="${proxy.config.useProxy}"></property>
+ 		<property name="proxyHost" value="${proxy.config.host}"></property>
+ 		<property name="proxyPort" value="${proxy.config.port}"></property>
+ 		<property name="proxyUser" value="${proxy.config.userName}"></property>
+ 		<property name="proxyPwd" value="${proxy.config.password}"></property>
+ 		<property name="harvestRequestDTO" ref="harvestRequestDTO"></property>
+ 	</bean>
+	
+	<bean id="harvestRequestDTO" class="com.upm.etsist.dto.HarvestRequestDTO">
+ 		<property name="baseURL" value="${harvest.baseURL}"></property>
+ 		<property name="metadataPrefix" value="${harvest.metadataPrefix}"></property>
+ 		<property name="set" value="${harvest.set}"></property>
+ 	</bean>
+	
+	<bean id="deferredResultService" class="com.upm.etsist.ajax.DeferredResultService" >
+		<property name="messagesQueue" ref="messagesQueue"/>
+ 		<property name="shutdownService" ref="shutdownService"></property>
+ 		<property name="harvestExecutor" ref="harvestExecutor"></property>
+ 		<property name="messageSource" ref="messageSource"></property>
+ 	</bean>
+
+</beans>

@@ -1,0 +1,32 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+    http://www.springframework.org/schema/security
+    http://www.springframework.org/schema/security/spring-security-4.0.xsd">
+
+	<http auto-config="true" >
+		<intercept-url pattern="/harvest/*" access="hasAnyRole('ROLE_ADMIN','ROLE_DBA')" />
+		<intercept-url pattern="/harvest/*" access="hasAnyRole('ROLE_ADMIN','ROLE_DBA')" />
+		<intercept-url pattern="/deferredHarvest" access="hasAnyRole('ROLE_ADMIN','ROLE_DBA')" />
+		<intercept-url pattern="/update/searchResponse" access="hasAnyRole('ROLE_ADMIN','ROLE_DBA')" />
+		<intercept-url pattern="/delete/searchResponse" access="hasAnyRole('ROLE_ADMIN','ROLE_DBA')" />
+		<intercept-url pattern="/checkTexts" access="hasAnyRole('ROLE_ADMIN','ROLE_DBA')" />
+		<intercept-url pattern="/adminUsers" access="hasRole('ROLE_ADMIN')" />
+		<intercept-url pattern="/update/user" access="hasRole('ROLE_ADMIN')" />
+		<intercept-url pattern="/delete/user" access="hasRole('ROLE_ADMIN')" />
+		<intercept-url pattern="/reset" access="hasRole('ROLE_ADMIN')" />
+		<intercept-url pattern="/updatePassword" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_DBA')" />
+		<intercept-url pattern="/**" access="permitAll" />
+		<form-login  login-page="/login" username-parameter="ssoId" password-parameter="password" authentication-failure-url="/login?error" />
+		<logout delete-cookies="JSESSIONID" logout-success-url="/loggedOut/OK" />
+		<session-management invalid-session-url="/" />
+      	<csrf/>
+	</http>
+
+	<authentication-manager >
+        <authentication-provider user-service-ref="customUserDetailsService"/>
+    </authentication-manager>
+      
+
+</beans:beans>
